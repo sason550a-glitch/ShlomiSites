@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shlomi Paor - מערכת ניהול מספרות יוקרתית</title>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script> 
+
+    <!-- חסימת לחצן ימני ומקשי פיתוח (F12 / Inspect) -->
+    <script>
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.addEventListener('keydown', function (event) {
+            if (event.keyCode == 123 || 
+                (event.ctrlKey && event.shiftKey && (event.keyCode == 73 || event.keyCode == 74)) || 
+                (event.ctrlKey && event.keyCode == 85)) {
+                event.preventDefault();
+            }
+        });
+    </script>
+
+    <style>
+        :root {
+            --primary: #b89753;
+            --primary-hover: #9c7e44;
+            --bg-color: #f2ede9;       
+            --card-bg: rgba(255, 255, 255, 0.7); 
+            --text-main: #1a1a1a;      
+            --text-muted: #555555;     
+            --border: rgba(184, 151, 83, 0.4); 
+            --danger: #d9534f;
+            --success: #5cb85c;
+            --accent-light: rgba(255, 255, 255, 0.85);
+        } 
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        } 
+
+        body {
+            background: linear-gradient(135deg, #f7f3f0 0%, #e6dcd6 100%);
+            color: var(--text-main);
+            padding: 25px;
+            min-height: 100vh;
+        } 
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        } 
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 20px 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            margin-bottom: 30px;
+            border: 2px solid #000000;
+            outline: 1px solid var(--primary);
+        } 
+
+        h1, h2, h3 {
+            color: var(--text-main);
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        } 
+
+        button {
+            background: linear-gradient(135deg, #c5a059 0%, #a8843e 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 15px rgba(184, 151, 83, 0.25);
+            transition: all 0.3s ease;
+        } 
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(184, 151, 83, 0.4);
+        } 
+
+        button.secondary {
+            background: rgba(184, 151, 83, 0.2);
+            color: var(--text-main);
+            box-shadow: none;
+            border: 1px solid var(--border);
+        } 
+
+        button.secondary:hover {
+            background: rgba(184, 151, 83, 0.35);
+        }
+
+        button.danger {
+            background: linear-gradient(135deg, #d9534f 0%, #c9302c 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(217, 83, 79, 0.25);
+        } 
+
+        button.warning {
+            background: linear-gradient(135deg, #f0ad4e 0%, #ec971f 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(240, 173, 78, 0.25);
+        } 
+
+        button.whatsapp {
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.25);
+        } 
+
+        button.sms-btn {
+            background: linear-gradient(135deg, #02b875 0%, #01985e 100%);
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        } 
+
+        button.toggle-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--primary);
+            width: 100%;
+            text-align: right;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            border: 1.5px solid #000000;
+            outline: 1px solid var(--primary);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        button.toggle-btn:hover {
+            background: #ffffff;
+            transform: none;
+        } 
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            margin-bottom: 25px;
+            border: 2px solid #000000;
+            outline: 1.5px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), #000000, var(--primary));
+        } 
+
+        .salon-3d-header {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 230, 222, 0.8) 100%);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 25px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            border: 2px solid #000000;
+            outline: 1.5px solid var(--primary);
+            position: relative;
+        } 
+
+        .salon-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        } 
+
+        .salon-icon-box {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, #9c7e44 100%);
+            color: #ffffff;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(184, 151, 83, 0.3);
+            border: 1px solid #000000;
+            flex-shrink: 0;
+        } 
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        } 
+
+        @media(max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .salon-3d-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            text-align: right;
+        } 
+
+        th, td {
+            padding: 14px 15px;
+            text-align: right !important;
+            border-bottom: 1px solid rgba(184, 151, 83, 0.3);
+            color: var(--text-main);
+        } 
+
+        th {
+            background-color: rgba(255, 255, 255, 0.8);
+            color: var(--primary);
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #000000;
+        } 
+
+        /* וידוא שכל שדות הקלט ותיבות הבחירה מיושרים לימין באופן מלא ומוצגים במלואם בתוך המסגרת */
+        input, select {
+            width: 100%;
+            max-width: 100%;
+            padding: 12px 15px;
+            margin-top: 6px;
+            margin-bottom: 16px;
+            border: 1.5px solid #000000;
+            outline: 1px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: var(--text-main);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(5px);
+            text-align: right;
+            direction: rtl;
+        } 
+
+        input:focus, select:focus {
+            outline: 2px solid var(--primary);
+            background-color: #ffffff;
+        } 
+
+        .hidden {
+            display: none !important;
+        } 
+
+        .badge {
+            background: rgba(184, 151, 83, 0.2);
+            color: var(--text-main);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border: 1px solid #000000;
+            outline: 1px solid var(--primary);
+            display: inline-block;
+            white-space: nowrap;
+        } 
+
+        .receipt-modal {
+            border: 2px solid #000000;
+            outline: 1px solid var(--primary);
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            margin-top: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            text-align: inherit;
+        } 
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 35px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 2px solid #000000;
+            outline: 2px solid var(--primary);
+            text-align: center;
+        } 
+
+        .stats-box {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 2px solid #000000;
+            outline: 1px solid var(--primary);
+            padding: 20px;
+            border-radius: 14px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        .stats-box h4 {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        .stats-box .val {
+            color: var(--primary);
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body> 
+
+<!-- מסך הזנת סיסמה למספרה בכניסה מקישור -->
+<div id="password-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+        <h2 id="txt-admin-login" style="color: var(--primary); margin-bottom: 10px; font-size: 1.4rem;">כניסת מנהל</h2>
+        <p id="modal-salon-name" style="color: var(--text-muted); margin-bottom: 20px; font-weight: 600; font-size: 1rem;"></p>
+        <input type="password" id="login-password-input" placeholder="הקש סיסמת ניהול..." style="text-align: center;">
+        <button onclick="verifySalonPassword()" id="txt-enter-btn" style="width: 100%; padding: 12px; margin-bottom: 10px;">כניסה למערכת</button>
+    </div>
+</div> 
+
+<!-- מסך שגיאה מפורט -->
+<div id="error-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+        <h2 style="color: var(--danger); margin-bottom: 10px; font-size: 1.3rem;">שגיאה באיתור המספרה</h2>
+        <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">הקישור אינו תקין או שהמספרה המבוקשת אינה קיימת.</p>
+        <button onclick="window.location.href = window.location.origin + window.location.pathname;" style="width: 100%; padding: 10px;">חזרה לדף הראשי</button>
+    </div>
+</div> 
+
+<!-- מסך חסימה עקב פגי תוקף מנוי -->
+<div id="expired-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+        <h2 style="color: var(--danger); margin-bottom: 10px; font-size: 1.3rem;">פג תוקף המנוי</h2>
+        <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">תקופת הפעילות של המספרה בענן הסתיימה. פנה למנהל לחידוש הרישיון.</p>
+    </div>
+</div>
+
+<div class="container">
+    <header>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div>
+                <h1 id="main-app-title" style="font-size: 1.4rem; color: var(--primary); text-shadow: 0 1px 2px rgba(0,0,0,0.1);">PaorSystem</h1>
+                <p id="current-view-title" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">מערכת ניהול מספרות מקצועית</p>
+            </div>
+            <!-- אייקון קטן של גבר מרים משקולות בצד ימין של הכותרת הראשונה -->
+            <span style="font-size: 1.6rem;" title="PaorSystem Fitness">🏋️‍♂️</span>
+        </div>
+        <div id="header-actions" style="display: flex; gap: 10px; align-items: center;"></div>
+    </header> 
+
+    <!-- מסך 1: ניהול ראשי (Super Admin) -->
+    <div id="super-admin-view" class="card hidden">
+        <h2 style="color: var(--primary); margin-bottom: 5px;">ניהול מערכת ראשי</h2>
+        <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">הקמה וניהול של בתי עסק, מעקב מנויים ושליחת גישה.</p>
+        
+        <div style="background: var(--accent-light); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1.5px solid #000000; outline: 1px solid var(--primary);">
+            <h3 id="form-mode-title" style="margin-bottom: 15px; font-size: 1.1rem; color: var(--primary);">הקמת עסק חדש</h3>
+            <input type="hidden" id="edit-salon-id">
+            <input type="text" id="new-salon-name" placeholder="שם המספרה">
+            <input type="text" id="new-salon-owner" placeholder="שם בעל העסק">
+            <input type="text" id="new-salon-phone" placeholder="מספר טלפון וואטסאפ">
+            <input type="text" id="new-salon-pass" placeholder="סיסמת כניסה">
+            <label style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; display: block; margin-top: 5px;">תוקף מנוי בימים (ברירת מחדל: 365):</label>
+            <input type="number" id="new-salon-days" value="365" placeholder="ימי תוקף">
+            <button onclick="saveSalon()" id="save-salon-btn" style="width: 100%; margin-top: 5px;">צור עסק חדש</button>
+            <button onclick="resetSalonForm()" class="secondary hidden" id="cancel-edit-btn" style="width: 100%; margin-top: 5px;">ביטול עריכה</button>
+        </div> 
+
+        <h3 style="margin-bottom: 15px; font-size: 1.1rem; color: var(--primary);">בתי עסק פעילים</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>שם המספרה</th>
+                        <th>בעלים</th>
+                        <th>טלפון</th>
+                        <th>סיסמה</th>
+                        <th>תוקף מנוי</th>
+                        <th>פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="salons-list"></tbody>
+            </table>
+        </div>
+    </div> 
+
+    <!-- מסך 2: ניהול מספרה ספציפית -->
+    <div id="salon-dashboard-view" class="hidden">
+        
+        <div class="salon-3d-header">
+            <div class="salon-title-wrapper">
+                <div class="salon-icon-box">✂️</div>
+                <div>
+                    <h2 id="active-salon-title" style="color: var(--text-main); font-size: 1.6rem; letter-spacing: -0.5px;">טוען מספרה...</h2>
+                    <p id="txt-salon-subtitle" style="color: var(--text-muted); font-size: 0.9rem; margin-top: 2px; font-weight: 600;">ניהול תורים, לקוחות וקבלות בענן</p>
+                </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-start;">
+                <select id="lang-selector" onchange="changeLanguage(this.value)" style="width: auto; margin: 0; padding: 6px 12px; font-size: 0.85rem; font-weight: 700;">
+                    <option value="he">🇮🇱 עברית</option>
+                    <option value="ru">🇷🇺 Русский</option>
+                </select>
+                <span class="badge" id="salon-id-badge">מזהה מספרה</span>
+                <span class="badge" id="salon-expiry-badge">תוקף: נטען...</span>
+            </div>
+        </div> 
+
+        <!-- מדדי קופה מהירים -->
+        <div class="grid-2">
+            <div class="stats-box">
+                <h4 id="txt-total-rev">סה"כ הכנסות</h4>
+                <div class="val" id="total-revenue-val">₪0</div>
+            </div>
+            <div class="stats-box">
+                <h4 id="txt-total-receipts">קבלות שהופקו</h4>
+                <div class="val" id="total-receipts-count">0</div>
+            </div>
+        </div> 
+
+        <!-- ניהול מחירון ושירותים -->
+        <div class="card" style="background: var(--accent-light);">
+            <button class="toggle-btn" onclick="toggleSection('services-management-container', this)" style="margin-bottom: 0;">
+                <span id="txt-services-mgmt">⚙️ ניהול מחירון ושירותים</span>
+                <span id="services-toggle-icon">▼ הצג</span>
+            </button>
+            
+            <div id="services-management-container" class="hidden" style="margin-top: 20px; border-top: 1.5px solid #000000; padding-top: 20px;">
+                <!-- תוקן יישור תיבת "הוסף למחירון" בתוך גבולות המסגרת באמצעות מרווחים מדויקים ותיחום פנימי -->
+                <div class="grid-2" style="align-items: start; padding: 0 5px;">
+                    <div style="background: rgba(255, 255, 255, 0.6); padding: 15px; border-radius: 12px; border: 1px solid var(--border); box-sizing: border-box;">
+                        <h4 id="service-form-title" style="margin-bottom: 12px; font-size: 1.05rem; color: var(--primary);">הוספת שירות חדש</h4>
+                        <input type="hidden" id="edit-service-index" value="">
+                        <input type="text" id="new-service-name" placeholder="שם השירות (למשל: תספורת גברים)">
+                        <input type="number" id="new-service-price" placeholder="מחיר (₪)">
+                        <select id="new-service-category">
+                            <option value="גברים">גברים</option>
+                            <option value="נשים">נשים</option>
+                            <option value="ילדים">ילדים</option>
+                        </select>
+                        <button onclick="saveServiceToCatalog()" id="save-service-btn" style="width: 100%;">הוסף למחירון</button>
+                        <button onclick="resetServiceForm()" class="secondary hidden" id="cancel-service-edit-btn" style="margin-top: 5px; width: 100%;">ביטול</button>
+                    </div>
+                    <div style="box-sizing: border-box; padding-top: 2px;">
+                        <h4 id="txt-current-pricelist" style="margin-bottom: 12px; font-size: 1.05rem; color: var(--primary);">מחירון נוכחי</h4>
+                        <div style="max-height: 250px; overflow-y: auto;">
+                            <table style="font-size: 0.9rem;">
+                                <thead>
+                                    <tr>
+                                        <th id="th-srv-name">שירות</th>
+                                        <th id="th-srv-cat">קטגוריה</th>
+                                        <th id="th-srv-price" style="width: 90px;">מחיר</th>
+                                        <th id="th-srv-actions" style="width: 110px;">פעולות</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="services-catalog-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> 
+
+        <div class="grid-2">
+            <!-- ניהול לקוחות -->
+            <div class="card">
+                <h3 id="txt-clients-title" style="margin-bottom: 15px; font-size: 1.1rem; color: var(--primary);">לקוחות</h3>
+                <input type="text" id="client-name" placeholder="שם מלא">
+                <input type="text" id="client-phone" placeholder="מספר טלפון ל-SMS">
+                <select id="client-category">
+                    <option value="גברים">גברים</option>
+                    <option value="נשים">נשים</option>
+                    <option value="ילדים">ילדים</option>
+                </select>
+                <button onclick="addClient()" id="txt-add-client-btn" style="margin-bottom: 15px; width: 100%;">הוסף לקוח</button>
+                
+                <button class="toggle-btn" onclick="toggleSection('clients-list-container', this)">
+                    <span id="txt-clients-list">רשימת לקוחות</span>
+                    <span>▼ הצג</span>
+                </button>
+                
+                <div id="clients-list-container" class="hidden" style="max-height: 200px; overflow-y: auto;">
+                    <table style="font-size: 0.9rem;">
+                        <thead>
+                            <tr>
+                                <th id="th-cl-name">שם</th>
+                                <th id="th-cl-phone">טלפון</th>
+                                <th id="th-cl-cat">קטגוריה</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clients-table-body"></tbody>
+                    </table>
+                </div>
+            </div> 
+
+            <!-- ניהול תורים -->
+            <div class="card">
+                <h3 id="txt-app-title" style="margin-bottom: 15px; font-size: 1.1rem; color: var(--primary);">תורים</h3>
+                <select id="appointment-client-select">
+                    <option value="">בחר לקוח...</option>
+                </select>
+                <input type="date" id="appointment-date">
+                <input type="time" id="appointment-time">
+                <select id="appointment-service-select">
+                    <option value="">בחר שירות...</option>
+                </select>
+                <button onclick="addAppointment()" id="txt-add-app-btn" style="margin-bottom: 15px; width: 100%;">קבע תור חדש</button>
+                
+                <button class="toggle-btn" onclick="toggleSection('appointments-list-container', this)">
+                    <span id="txt-app-calendar">יומן תורים</span>
+                    <span>▼ הצג</span>
+                </button> 
+
+                <div id="appointments-list-container" class="hidden" style="max-height: 200px; overflow-y: auto;">
+                    <table style="font-size: 0.9rem;">
+                        <thead>
+                            <tr>
+                                <th id="th-app-client">לקוח</th>
+                                <th id="th-app-datetime">תאריך ושעה</th>
+                                <th id="th-app-service">שירות</th>
+                                <th id="th-app-action">פעולה</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointments-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div> 
+
+        <!-- תשלומים וקבלות -->
+        <div class="card">
+            <h3 id="txt-cashier-title" style="margin-bottom: 15px; font-size: 1.1rem; color: var(--primary);">קופה והפקת קבלות</h3>
+            <div class="grid-2">
+                <div>
+                    <select id="receipt-client-select">
+                        <option value="">בחר לקוח לחיוב...</option>
+                    </select>
+                    <select id="receipt-service-select" onchange="fillReceiptAmountFromService()">
+                        <option value="">בחר שירות לחיוב...</option>
+                    </select>
+                    <input type="text" id="receipt-items" placeholder="תיאור נוסף (אופציונלי)">
+                    <input type="number" id="receipt-amount" placeholder="סכום לתשלום (₪)">
+                    <button onclick="generateReceipt()" id="txt-gen-rec-btn" style="width: 100%;">הפק קבלה</button>
+                </div>
+                <div>
+                    <div id="receipt-preview" class="receipt-modal hidden">
+                        <h4 style="color: var(--primary); margin-bottom: 8px;"><span id="txt-rec-title">קבלה מס'</span> <span id="rec-num">1001</span></h4>
+                        <p style="font-size: 0.9rem;"><strong><span id="txt-rec-date">תאריך</span>:</strong> <span id="rec-date"></span></p>
+                        <p style="font-size: 0.9rem;"><strong><span id="txt-rec-salon">עסק</span>:</strong> <span id="rec-salon"></span></p>
+                        <p style="font-size: 0.9rem;"><strong><span id="txt-rec-client">לכבוד</span>:</strong> <span id="rec-client"></span></p>
+                        <p style="font-size: 0.9rem;"><strong><span id="txt-rec-desc">פירוט</span>:</strong> <span id="rec-desc"></span></p>
+                        <p style="font-size: 0.95rem; margin-top: 5px;"><strong><span id="txt-rec-total">סכום</span>:</strong> ₪<span id="rec-total" style="color: var(--primary); font-weight: 700;"></span></p>
+                        <p id="txt-rec-status" style="color: var(--success); margin-top: 8px; font-weight: 700; font-size: 0.9rem;">סטטוס: שולם ✓</p>
+                        <button onclick="sendReceiptSMS()" id="txt-send-sms-btn" class="sms-btn">📱 שליחת קבלה ב-SMS</button>
+                    </div>
+                </div>
+            </div> 
+
+            <button class="toggle-btn" onclick="toggleSection('receipts-history-container', this)" style="margin-top: 20px;">
+                <span id="txt-receipts-history">היסטוריית קבלות</span>
+                <span>▼ הצג</span>
+            </button>
+            <div id="receipts-history-container" class="hidden" style="max-height: 200px; overflow-y: auto;">
+                <table style="font-size: 0.9rem;">
+                    <thead>
+                        <tr>
+                            <th id="th-rh-num">מס'</th>
+                            <th id="th-rh-date">תאריך</th>
+                            <th id="th-rh-client">לקוח</th>
+                            <th id="th-rh-desc">פירוט</th>
+                            <th id="th-rh-amount" style="width: 90px;">סכום</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receipts-history-tbody"></tbody>
+                </table>
+            </div>
+        </div> 
+
+        <!-- אזור גיבוי ושחזור -->
+        <div class="card" style="background: var(--accent-light);">
+            <h3 id="txt-backup-title" style="margin-bottom: 6px; font-size: 1.05rem; color: var(--primary);">גיבוי ושחזור נתונים</h3>
+            <p id="txt-backup-desc" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px; font-weight: 600;">הנתונים נשמרים בענן אוטומטית. ניתן גם להוריד או להעלות קובץ גיבוי פיזי.</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <button onclick="backupSalonData()" id="txt-download-backup" class="secondary">📥 הורד גיבוי JSON</button>
+                <input type="file" id="restore-file-input" accept=".json" style="margin: 0; padding: 6px; background: rgba(255,255,255,0.9); font-size: 0.85rem; width: auto;" onchange="restoreSalonData(event)">
+            </div>
+        </div> 
+
+    </div>
+</div> 
+
+<script>
+    const _0x1abc = {
+        apiKey: "AIzaSyDDdiDm9BAyeki1x-kS1zH1LOzF36Ifvv4",
+        authDomain: "studiomanagementsystem-755c5.firebaseapp.com",
+        databaseURL: "https://studiomanagementsystem-755c5-default-rtdb.firebaseio.com",
+        projectId: "studiomanagementsystem-755c5",
+        storageBucket: "studiomanagementsystem-755c5.firebasestorage.app",
+        messagingSenderId: "507536412196",
+        appId: "1:507536412196:web:2a59f5b88083f39c8b52b1"
+    }; 
+
+    firebase.initializeApp(_0x1abc);
+    const database = firebase.database(); 
+
+    // מילון תרגומים (עברית / רוסית)
+    const translations = {
+        he: {
+            htmlDir: "rtl",
+            adminLogin: "כניסת מנהל",
+            enterSys: "כניסה למערכת",
+            subtitle: "ניהול תורים, לקוחות וקבלות בענן",
+            totalRev: "סה\"כ הכנסות",
+            totalRecs: "קבלות שהופקו",
+            servicesMgmt: "⚙️ ניהול מחירון ושירותים",
+            addServiceTitle: "הוספת שירות חדש",
+            srvNamePlace: "שם השירות (למשל: תספורת גברים)",
+            srvPricePlace: "מחיר (₪)",
+            addSrvBtn: "הוסף למחירון",
+            cancelBtn: "ביטול",
+            currentPricelist: "מחירון נוכחי",
+            thSrvName: "שירות",
+            thSrvCat: "קטגוריה",
+            thSrvPrice: "מחיר",
+            thSrvActions: "פעולות",
+            clientsTitle: "לקוחות",
+            clientNamePlace: "שם מלא",
+            clientPhonePlace: "מספר טלפון ל-SMS",
+            addClientBtn: "הוסף לקוח",
+            clientsList: "רשימת לקוחות",
+            thClName: "שם",
+            thClPhone: "טלפון",
+            thClCat: "קטגוריה",
+            appTitle: "תורים",
+            selectClientOpt: "בחר לקוח...",
+            selectSrvOpt: "בחר שירות...",
+            addAppBtn: "קבע תור חדש",
+            appCalendar: "יומן תורים",
+            thAppClient: "לקוח",
+            thAppDatetime: "תאריך ושעה",
+            thAppService: "שירות",
+            thAppAction: "פעולה",
+            cashierTitle: "קופה והפקת קבלות",
+            selectPayClient: "בחר לקוח לחיוב...",
+            selectPaySrv: "בחר שירות לחיוב...",
+            recDescPlace: "תיאור נוסף (אופציונלי)",
+            recAmountPlace: "סכום לתשלום (₪)",
+            genRecBtn: "הפק קבלה",
+            recTitle: "קבלה מס'",
+            recDate: "תאריך",
+            recSalon: "עסק",
+            recClient: "לכבוד",
+            recDesc: "פירוט",
+            recTotal: "סכום",
+            recStatus: "סטטוס: שולם ✓",
+            sendSmsBtn: "📱 שליחת קבלה ב-SMS",
+            receiptsHistory: "היסטוריית קבלות",
+            thRhNum: "מס'",
+            thRhDate: "תאריך",
+            thRhClient: "לקוח",
+            thRhDesc: "פירוט",
+            thRhAmount: "סכום",
+            backupTitle: "גיבוי ושחזור נתונים",
+            backupDesc: "הנתונים נשמרים בענן אוטומטית. ניתן גם להוריד או להעלות קובץ גיבוי פיזי.",
+            downloadBackup: "📥 הורד גיבוי JSON",
+            catMen: "גברים",
+            catWomen: "נשים",
+            catKids: "ילדים"
+        },
+        ru: {
+            htmlDir: "ltr",
+            adminLogin: "Вход администратора",
+            enterSys: "Войти в систему",
+            subtitle: "Управление записями, клиентами и чеками в облаке",
+            totalRev: "Всего доходов",
+            totalRecs: "Выданные чеки",
+            servicesMgmt: "⚙️ Управление прайс-листом и услугами",
+            addServiceTitle: "Добавить новую услугу",
+            srvNamePlace: "Название услуги (например: Мужская стрижка)",
+            srvPricePlace: "Цена (₪)",
+            addSrvBtn: "Добавить в прайс",
+            cancelBtn: "Отмена",
+            currentPricelist: "Текущий прайс-лист",
+            thSrvName: "Услуга",
+            thSrvCat: "Категория",
+            thSrvPrice: "Цена",
+            thSrvActions: "Действия",
+            clientsTitle: "Клиенты",
+            clientNamePlace: "Полное имя",
+            clientPhonePlace: "Номер телефона для SMS",
+            addClientBtn: "Добавить клиента",
+            clientsList: "Список клиентов",
+            thClName: "Имя",
+            thClPhone: "Телефон",
+            thClCat: "Категория",
+            appTitle: "Записи",
+            selectClientOpt: "Выберите клиента...",
+            selectSrvOpt: "Выберите услугу...",
+            addAppBtn: "Назначить встречу",
+            appCalendar: "Календарь записей",
+            thAppClient: "Клиент",
+            thAppDatetime: "Дата и время",
+            thAppService: "Услуга",
+            thAppAction: "Действие",
+            cashierTitle: "Касса и выдача чеков",
+            selectPayClient: "Выберите клиента для оплаты...",
+            selectPaySrv: "Выберите услугу для оплаты...",
+            recDescPlace: "Доп. описание (необязательно)",
+            recAmountPlace: "Сумма к оплате (₪)",
+            genRecBtn: "Создать чек",
+            recTitle: "Чек №",
+            recDate: "Дата",
+            recSalon: "Салон",
+            recClient: "Клиент",
+            recDesc: "Описание",
+            recTotal: "Сумма",
+            recStatus: "Статус: Оплачено ✓",
+            sendSmsBtn: "📱 Отправить чек по SMS",
+            receiptsHistory: "История чеков",
+            thRhNum: "№",
+            thRhDate: "Дата",
+            thRhClient: "Клиент",
+            thRhDesc: "Описание",
+            thRhAmount: "Сумма",
+            backupTitle: "Резервное копирование и восстановление",
+            backupDesc: "Данные сохраняются в облаке автоматически. Вы также можете скачать или загрузить файл бэкапа.",
+            downloadBackup: "📥 Скачать бэкап JSON",
+            catMen: "Мужские",
+            catWomen: "Женские",
+            catKids: "Детские"
+        }
+    };
+
+    let currentLang = 'he';
+
+    function changeLanguage(lang) {
+        currentLang = lang;
+        const t = translations[lang];
+        document.getElementById('html-root').setAttribute('dir', t.htmlDir);
+        document.getElementById('html-root').setAttribute('lang', lang);
+
+        document.getElementById('txt-admin-login').innerText = t.adminLogin;
+        document.getElementById('txt-enter-btn').innerText = t.enterSys;
+        document.getElementById('txt-salon-subtitle').innerText = t.subtitle;
+        document.getElementById('txt-total-rev').innerText = t.totalRev;
+        document.getElementById('txt-total-receipts').innerText = t.totalRecs;
+        document.getElementById('txt-services-mgmt').innerHTML = t.servicesMgmt;
+        document.getElementById('service-form-title').innerText = t.addServiceTitle;
+        document.getElementById('new-service-name').placeholder = t.srvNamePlace;
+        document.getElementById('new-service-price').placeholder = t.srvPricePlace;
+        document.getElementById('save-service-btn').innerText = t.addSrvBtn;
+        document.getElementById('cancel-service-edit-btn').innerText = t.cancelBtn;
+        document.getElementById('txt-current-pricelist').innerText = t.currentPricelist;
+        document.getElementById('th-srv-name').innerText = t.thSrvName;
+        document.getElementById('th-srv-cat').innerText = t.thSrvCat;
+        document.getElementById('th-srv-price').innerText = t.thSrvPrice;
+        document.getElementById('th-srv-actions').innerText = t.thSrvActions;
+        
+        document.getElementById('txt-clients-title').innerText = t.clientsTitle;
+        document.getElementById('client-name').placeholder = t.clientNamePlace;
+        document.getElementById('client-phone').placeholder = t.clientPhonePlace;
+        document.getElementById('txt-add-client-btn').innerText = t.addClientBtn;
+        document.getElementById('txt-clients-list').innerText = t.clientsList;
+        document.getElementById('th-cl-name').innerText = t.thClName;
+        document.getElementById('th-cl-phone').innerText = t.thClPhone;
+        document.getElementById('th-cl-cat').innerText = t.thClCat;
+
+        document.getElementById('txt-app-title').innerText = t.appTitle;
+        document.getElementById('txt-add-app-btn').innerText = t.addAppBtn;
+        document.getElementById('txt-app-calendar').innerText = t.appCalendar;
+        document.getElementById('th-app-client').innerText = t.thAppClient;
+        document.getElementById('th-app-datetime').innerText = t.thAppDatetime;
+        document.getElementById('th-app-service').innerText = t.thAppService;
+        document.getElementById('th-app-action').innerText = t.thAppAction;
+
+        document.getElementById('txt-cashier-title').innerText = t.cashierTitle;
+        document.getElementById('receipt-items').placeholder = t.recDescPlace;
+        document.getElementById('receipt-amount').placeholder = t.recAmountPlace;
+        document.getElementById('txt-gen-rec-btn').innerText = t.genRecBtn;
+        document.getElementById('txt-rec-title').innerText = t.recTitle;
+        document.getElementById('txt-rec-date').innerText = t.recDate;
+        document.getElementById('txt-rec-salon').innerText = t.recSalon;
+        document.getElementById('txt-rec-client').innerText = t.recClient;
+        document.getElementById('txt-rec-desc').innerText = t.recDesc;
+        document.getElementById('txt-rec-total').innerText = t.recTotal;
+        document.getElementById('txt-rec-status').innerText = t.recStatus;
+        document.getElementById('txt-send-sms-btn').innerText = t.sendSmsBtn;
+        document.getElementById('txt-receipts-history').innerText = t.receiptsHistory;
+
+        document.getElementById('th-rh-num').innerText = t.thRhNum;
+        document.getElementById('th-rh-date').innerText = t.thRhDate;
+        document.getElementById('th-rh-client').innerText = t.thRhClient;
+        document.getElementById('th-rh-desc').innerText = t.thRhDesc;
+        document.getElementById('th-rh-amount').innerText = t.thRhAmount;
+
+        document.getElementById('txt-backup-title').innerText = t.backupTitle;
+        document.getElementById('txt-backup-desc').innerText = t.backupDesc;
+        document.getElementById('txt-download-backup').innerText = t.downloadBackup;
+
+        updateCategoryOptions();
+        if(currentSalonId) renderSalonData();
+    }
+
+    function updateCategoryOptions() {
+        const catSelects = ['new-service-category', 'client-category'];
+        const cats = currentLang === 'ru' ? ['Мужские', 'Женские', 'Детские'] : ['גברים', 'נשים', 'ילדים'];
+        const realValues = ['גברים', 'נשים', 'ילדים'];
+
+        catSelects.forEach(id => {
+            const sel = document.getElementById(id);
+            if(sel) {
+                const currentVal = sel.value;
+                sel.innerHTML = '';
+                for(let i=0; i<cats.length; i++) {
+                    sel.innerHTML += `<option value="${realValues[i]}">${cats[i]}</option>`;
+                }
+                sel.value = currentVal;
+            }
+        });
+    }
+
+    const defaultFullServices = [
+        { name: 'תספורת גברים', price: 60, category: 'גברים' },
+        { name: 'תספורת + זקן', price: 80, category: 'גברים' },
+        { name: 'עיצוב זקן', price: 40, category: 'גברים' },
+        { name: 'תספורת נשים', price: 120, category: 'נשים' },
+        { name: 'פן', price: 60, category: 'נשים' },
+        { name: 'צבע שיער', price: 180, category: 'נשים' },
+        { name: 'תספורת ילדים', price: 50, category: 'ילדים' }
+    ]; 
+
+    let globalSalons = [];
+    let globalData = {};
+    let currentSalonId = null;
+    let pendingSalonParam = null;
+    let lastGeneratedReceipt = null; 
+
+    database.ref('salons').on('value', (_0x2abc) => {
+        globalSalons = _0x2abc.val() || [];
+        if (!Array.isArray(globalSalons)) {
+            globalSalons = Object.values(globalSalons);
+        }
+        if (currentSalonId === null) {
+            renderSalonsList();
+        } else {
+            const _0x3abc = globalSalons.find(s => s.id === currentSalonId);
+            if (_0x3abc) {
+                const _0x4abc = _0x3abc.name;
+                document.getElementById('active-salon-title').innerText = _0x4abc;
+                document.getElementById('current-view-title').innerText = _0x4abc;
+            }
+        }
+    }); 
+
+    database.ref('data').on('value', (_0x5abc) => {
+        globalData = _0x5abc.val() || {};
+        if (currentSalonId) {
+            renderSalonData();
+        }
+    }); 
+
+    function saveSalonsToCloud() {
+        database.ref('salons').set(globalSalons);
+    } 
+
+    function saveCurrentSalonDataToCloud() {
+        if (!currentSalonId) return;
+        if (!globalData[currentSalonId]) {
+            globalData[currentSalonId] = { services: [...defaultFullServices], clients: [], appointments: [], receipts: [] };
+        }
+        database.ref('data/' + currentSalonId).set(globalData[currentSalonId]);
+    } 
+
+    function getSalonExpiryInfo(salon) {
+        if (!salon.createdAt) return { expired: false, text: currentLang === 'ru' ? 'Без ограничений' : 'ללא הגבלה' };
+        const createdDate = new Date(salon.createdAt);
+        const daysValid = Number(salon.validDays) || 365;
+        const expiryDate = new Date(createdDate.getTime() + (daysValid * 24 * 60 * 60 * 1000));
+        const now = new Date();
+        const diffTime = expiryDate - now;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays <= 0) {
+            return { expired: true, text: currentLang === 'ru' ? 'Срок истек' : 'פג תוקף' };
+        }
+        return { expired: false, text: currentLang === 'ru' ? `Осталось ${diffDays} дн.` : `נותרו ${diffDays} ימים` };
+    }
+
+    function backupSalonData() {
+        if (!currentSalonId) return;
+        const data = getActiveData();
+        const salon = globalSalons.find(s => s.id === currentSalonId);
+        const salonName = salon ? salon.name : currentSalonId; 
+
+        const backupObject = {
+            salonId: currentSalonId,
+            salonName: salonName,
+            backupDate: new Date().toISOString(),
+            data: data
+        }; 
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObject, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `backup_${currentSalonId}_${new Date().toISOString().slice(0, 10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    } 
+
+    function restoreSalonData(event) {
+        const file = event.target.files[0];
+        if (!file) return; 
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                if (!parsed.data || !parsed.salonId) {
+                    alert('קובץ הגיבוי אינו תקין.');
+                    return;
+                } 
+
+                if (confirm('האם לשחזר את הנתונים לענן עבור מספרה זו?')) {
+                    if (!globalData) globalData = {};
+                    globalData[currentSalonId] = parsed.data;
+                    saveCurrentSalonDataToCloud();
+                    renderSalonData();
+                    alert('הנתונים שוחזרו בהצלחה!');
+                }
+            } catch (err) {
+                alert('שגיאה בקריאת הקובץ.');
+            }
+            event.target.value = '';
+        };
+        reader.readAsText(file);
+    } 
+
+    function toggleSection(containerId, btnElement) {
+        const container = document.getElementById(containerId);
+        const iconSpan = btnElement.querySelector('span:last-child');
+        if (container.classList.contains('hidden')) {
+            container.classList.remove('hidden');
+            iconSpan.innerText = '▲ ' + (currentLang === 'ru' ? 'Скрыть' : 'הסתר');
+        } else {
+            container.classList.add('hidden');
+            iconSpan.innerText = '▼ ' + (currentLang === 'ru' ? 'Показать' : 'הצג');
+        }
+    } 
+
+    function showSuperAdmin() {
+        currentSalonId = null;
+        document.getElementById('super-admin-view').classList.remove('hidden');
+        document.getElementById('salon-dashboard-view').classList.add('hidden');
+        document.getElementById('current-view-title').innerText = "ניהול מרכזי - מערכת מספרות";
+        resetSalonForm();
+        renderSalonsList();
+    } 
+
+    function renderSalonsList() {
+        const tbody = document.getElementById('salons-list');
+        tbody.innerHTML = '';
+        globalSalons.forEach(salon => {
+            const baseUrl = window.location.origin + window.location.pathname;
+            const salonLink = `${baseUrl}?salon=${salon.id}`;
+            const expiryInfo = getSalonExpiryInfo(salon);
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong style="color: var(--primary);">${salon.name}</strong></td>
+                    <td>${salon.owner}</td>
+                    <td>${salon.phone || 'לא הוזן'}</td>
+                    <td><code>${salon.password || 'אין'}</code></td>
+                    <td><span style="font-weight: 600;">${expiryInfo.text}</span></td>
+                    <td>
+                        <button onclick="openSalonDashboard('${salon.id}')" style="padding: 6px 10px; font-size: 0.85rem;">כניסה</button>
+                        <button onclick="sendWhatsApp('${encodeURIComponent(salon.name)}', '${encodeURIComponent(salon.owner)}', '${salon.phone || ''}', '${salon.password || ''}', '${encodeURIComponent(salonLink)}')" class="whatsapp" style="padding: 6px 10px; margin-right: 3px; font-size: 0.85rem;">וואטסאפ</button>
+                        <button onclick="editSalon('${salon.id}')" class="warning" style="padding: 6px 10px; margin-right: 3px; font-size: 0.85rem;">ערוך</button>
+                        <button onclick="deleteSalon('${salon.id}')" class="danger" style="padding: 6px 10px; margin-right: 3px; font-size: 0.85rem;">מחק</button>
+                    </td>
+                </tr>
+            `;
+        });
+    } 
+
+    function sendWhatsApp(encodedSalonName, encodedOwnerName, phone, password, encodedLink) {
+        const salonName = decodeURIComponent(encodedSalonName);
+        const ownerName = decodeURIComponent(encodedOwnerName);
+        const salonLink = decodeURIComponent(encodedLink);
+        const cleanPhone = phone.replace(/\D/g, '');
+        
+        const message = `הי ${ownerName}, מספרת "${salonName}" מוכנה! ✂️\n\nקישור לניהול:\n${salonLink}\n🔑 סיסמה: ${password}`;
+        
+        const whatsappUrl = cleanPhone 
+            ? `https://wa.me/972${cleanPhone.startsWith('0') ? cleanPhone.slice(1) : cleanPhone}?text=${encodeURIComponent(message)}`
+            : `https://wa.me/?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    } 
+
+    function saveSalon() {
+        const idField = document.getElementById('edit-salon-id').value;
+        const name = document.getElementById('new-salon-name').value.trim();
+        const owner = document.getElementById('new-salon-owner').value.trim();
+        const phone = document.getElementById('new-salon-phone').value.trim();
+        const password = document.getElementById('new-salon-pass').value.trim(); 
+        const validDays = Number(document.getElementById('new-salon-days').value) || 365;
+
+        if(!name || !owner || !password) return alert('נא למלא את שם המספרה, הבעלים והסיסמה'); 
+
+        let targetId = idField;
+        if (!targetId) {
+            const randomStr = Math.random().toString(36).substring(2, 8);
+            targetId = 'salon_' + Date.now().toString(36) + '_' + randomStr;
+        } 
+
+        if(idField) {
+            const salon = globalSalons.find(s => s.id === idField);
+            if(salon) {
+                salon.name = name;
+                salon.owner = owner;
+                salon.phone = phone;
+                salon.password = password;
+                salon.validDays = validDays;
+            }
+        } else {
+            const createdAt = new Date().toISOString();
+            globalSalons.push({ id: targetId, name, owner, phone, password, validDays, createdAt });
+            if (!globalData) globalData = {};
+            globalData[targetId] = { services: [...defaultFullServices], clients: [], appointments: [], receipts: [] };
+            database.ref('data/' + targetId).set(globalData[targetId]);
+        } 
+
+        saveSalonsToCloud();
+        resetSalonForm();
+        renderSalonsList();
+        alert('העסק נשמר בהצלחה בענן!');
+    } 
+
+    function editSalon(id) {
+        const salon = globalSalons.find(s => s.id === id);
+        if(!salon) return;
+        document.getElementById('edit-salon-id').value = salon.id;
+        document.getElementById('new-salon-name').value = salon.name;
+        document.getElementById('new-salon-owner').value = salon.owner;
+        document.getElementById('new-salon-phone').value = salon.phone || '';
+        document.getElementById('new-salon-pass').value = salon.password || '';
+        document.getElementById('new-salon-days').value = salon.validDays || 365;
+        document.getElementById('form-mode-title').innerText = `עריכת עסק: ${salon.name}`;
+        document.getElementById('save-salon-btn').innerText = 'שמור שינויים';
+        document.getElementById('cancel-edit-btn').classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } 
+
+    function resetSalonForm() {
+        document.getElementById('edit-salon-id').value = '';
+        document.getElementById('new-salon-name').value = '';
+        document.getElementById('new-salon-owner').value = '';
+        document.getElementById('new-salon-phone').value = '';
+        document.getElementById('new-salon-pass').value = '';
+        document.getElementById('new-salon-days').value = '365';
+        document.getElementById('form-mode-title').innerText = 'הקמת עסק חדש';
+        document.getElementById('save-salon-btn').innerText = 'צור עסק חדש';
+        document.getElementById('cancel-edit-btn').classList.add('hidden');
+    } 
+
+    function deleteSalon(id) {
+        if(confirm('האם למחוק את העסק?')) {
+            globalSalons = globalSalons.filter(s => s.id !== id);
+            saveSalonsToCloud();
+            if (globalData && globalData[id]) {
+                database.ref('data/' + id).remove();
+                delete globalData[id];
+            }
+            renderSalonsList();
+        }
+    } 
+
+    function openSalonDashboard(id) {
+        const salon = globalSalons.find(s => s.id === id);
+        if (salon) {
+            const expiryInfo = getSalonExpiryInfo(salon);
+            if (expiryInfo.expired) {
+                document.getElementById('expired-modal').classList.remove('hidden');
+                return;
+            }
+        }
+
+        currentSalonId = id;
+        document.getElementById('super-admin-view').classList.add('hidden');
+        document.getElementById('salon-dashboard-view').classList.remove('hidden');
+        
+        const salonName = salon ? salon.name : 'מספרה';
+        document.getElementById('active-salon-title').innerText = salonName;
+        document.getElementById('salon-id-badge').innerText = `ID: ${id}`;
+        
+        if (salon) {
+            const expiryInfo = getSalonExpiryInfo(salon);
+            const expiryBadge = document.getElementById('salon-expiry-badge');
+            expiryBadge.innerText = `${currentLang === 'ru' ? 'Срок' : 'תוקף'}: ${expiryInfo.text}`;
+        }
+
+        document.getElementById('current-view-title').innerText = salonName; 
+
+        renderSalonData();
+    } 
+
+    function getActiveData() {
+        if (!globalData) globalData = {};
+        if(!globalData[currentSalonId]) {
+            globalData[currentSalonId] = { services: [...defaultFullServices], clients: [], appointments: [], receipts: [] };
+        }
+        if(!globalData[currentSalonId].services) {
+            globalData[currentSalonId].services = [...defaultFullServices];
+        }
+        return globalData[currentSalonId];
+    } 
+
+    function renderSalonData() {
+        const data = getActiveData();
+        const servicesTbody = document.getElementById('services-catalog-table-body');
+        servicesTbody.innerHTML = '';
+        const appServiceSelect = document.getElementById('appointment-service-select');
+        const receiptServiceSelect = document.getElementById('receipt-service-select');
+        
+        appServiceSelect.innerHTML = `<option value="">${translations[currentLang].selectSrvOpt}</option>`;
+        receiptServiceSelect.innerHTML = `<option value="">${translations[currentLang].selectSrvOpt}</option>`; 
+
+        data.services.forEach((srv, index) => {
+            servicesTbody.innerHTML += `
+                <tr>
+                    <td>${srv.name}</td>
+                    <td>${srv.category}</td>
+                    <td style="color: var(--primary); font-weight: 700; text-align: right !important; white-space: nowrap;">₪${srv.price}</td>
+                    <td>
+                        <button onclick="editServiceInCatalog(${index})" class="warning" style="padding: 4px 8px; font-size: 0.8rem;">${currentLang === 'ru' ? 'Изм.' : 'ערוך'}</button>
+                        <button onclick="deleteServiceFromCatalog(${index})" class="danger" style="padding: 4px 8px; font-size: 0.8rem; margin-right: 3px;">${currentLang === 'ru' ? 'Удал.' : 'מחק'}</button>
+                    </td>
+                </tr>
+            `;
+            appServiceSelect.innerHTML += `<option value="${srv.name}">${srv.name} (₪${srv.price})</option>`;
+            receiptServiceSelect.innerHTML += `<option value="${srv.name}" data-price="${srv.price}">${srv.name} (₪${srv.price})</option>`;
+        });
+
+        const clientsTbody = document.getElementById('clients-table-body');
+        const appClientSelect = document.getElementById('appointment-client-select');
+        const receiptClientSelect = document.getElementById('receipt-client-select');
+        
+        clientsTbody.innerHTML = '';
+        appClientSelect.innerHTML = `<option value="">${translations[currentLang].selectClientOpt}</option>`;
+        receiptClientSelect.innerHTML = `<option value="">${translations[currentLang].selectPayClient}</option>`; 
+
+        data.clients.forEach(client => {
+            clientsTbody.innerHTML += `
+                <tr>
+                    <td>${client.name}</td>
+                    <td>${client.phone || '-'}</td>
+                    <td>${client.category}</td>
+                </tr>
+            `;
+            appClientSelect.innerHTML += `<option value="${client.name}">${client.name} (${client.category})</option>`;
+            receiptClientSelect.innerHTML += `<option value="${client.name}" data-phone="${client.phone || ''}">${client.name}</option>`;
+        });
+
+        const appointmentsTbody = document.getElementById('appointments-table-body');
+        appointmentsTbody.innerHTML = '';
+        data.appointments.sort((a, b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
+        
+        data.appointments.forEach((app, index) => {
+            appointmentsTbody.innerHTML += `
+                <tr>
+                    <td><strong>${app.client}</strong></td>
+                    <td>${app.date} | ${app.time}</td>
+                    <td>${app.service}</td>
+                    <td><button onclick="cancelAppointment(${index})" class="danger" style="padding: 4px 8px; font-size: 0.8rem;">${currentLang === 'ru' ? 'Отмена' : 'בטל'}</button></td>
+                </tr>
+            `;
+        });
+
+        const receiptsTbody = document.getElementById('receipts-history-tbody');
+        receiptsTbody.innerHTML = '';
+        let totalRev = 0;
+        
+        data.receipts.forEach(rec => {
+            totalRev += Number(rec.amount) || 0;
+            receiptsTbody.innerHTML += `
+                <tr>
+                    <td>#${rec.receiptNumber}</td>
+                    <td>${rec.date}</td>
+                    <td>${rec.client}</td>
+                    <td>${rec.items}</td>
+                    <td style="color: var(--primary); font-weight: 700; text-align: right !important; white-space: nowrap;">₪${rec.amount}</td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('total-revenue-val').innerText = `₪${totalRev}`;
+        document.getElementById('total-receipts-count').innerText = data.receipts.length;
+    }
+
+    function addClient() {
+        const name = document.getElementById('client-name').value.trim();
+        const phone = document.getElementById('client-phone').value.trim();
+        const category = document.getElementById('client-category').value; 
+
+        if(!name) return alert('נא להזין שם לקוח'); 
+
+        const data = getActiveData();
+        data.clients.push({ name, phone, category });
+        saveCurrentSalonDataToCloud();
+        renderSalonData(); 
+
+        document.getElementById('client-name').value = '';
+        document.getElementById('client-phone').value = '';
+        alert('הלקוח נוסף בהצלחה!');
+    }
+
+    function addAppointment() {
+        const client = document.getElementById('appointment-client-select').value;
+        const date = document.getElementById('appointment-date').value;
+        const time = document.getElementById('appointment-time').value;
+        const service = document.getElementById('appointment-service-select').value; 
+
+        if(!client || !date || !time || !service) return alert('נא למלא את כל פרטי התור'); 
+
+        const data = getActiveData();
+        data.appointments.push({ client, date, time, service });
+        saveCurrentSalonDataToCloud();
+        renderSalonData(); 
+
+        document.getElementById('appointment-date').value = '';
+        document.getElementById('appointment-time').value = '';
+        alert('התור נקבע בהצלחה!');
+    }
+
+    function cancelAppointment(index) {
+        if(confirm('האם לבטל את התור?')) {
+            const data = getActiveData();
+            data.appointments.splice(index, 1);
+            saveCurrentSalonDataToCloud();
+            renderSalonData();
+        }
+    }
+
+    function saveServiceToCatalog() {
+        const editIndex = document.getElementById('edit-service-index').value;
+        const name = document.getElementById('new-service-name').value.trim();
+        const price = Number(document.getElementById('new-service-price').value);
+        const category = document.getElementById('new-service-category').value; 
+
+        if(!name || !price) return alert('נא להזין שם שירות ומחיר תקין'); 
+
+        const data = getActiveData();
+        if (editIndex !== "") {
+            data.services[editIndex] = { name, price, category };
+            resetServiceForm();
+        } else {
+            data.services.push({ name, price, category });
+            document.getElementById('new-service-name').value = '';
+            document.getElementById('new-service-price').value = '';
+        } 
+
+        saveCurrentSalonDataToCloud();
+        renderSalonData();
+    }
+
+    function editServiceInCatalog(index) {
+        const data = getActiveData();
+        const srv = data.services[index];
+        document.getElementById('edit-service-index').value = index;
+        document.getElementById('new-service-name').value = srv.name;
+        document.getElementById('new-service-price').value = srv.price;
+        document.getElementById('new-service-category').value = srv.category;
+        document.getElementById('service-form-title').innerText = 'עריכת שירות';
+        document.getElementById('save-service-btn').innerText = 'שמור שינויים';
+        document.getElementById('cancel-service-edit-btn').classList.remove('hidden');
+    }
+
+    function resetServiceForm() {
+        document.getElementById('edit-service-index').value = '';
+        document.getElementById('new-service-name').value = '';
+        document.getElementById('new-service-price').value = '';
+        document.getElementById('service-form-title').innerText = translations[currentLang].addServiceTitle;
+        document.getElementById('save-service-btn').innerText = translations[currentLang].addSrvBtn;
+        document.getElementById('cancel-service-edit-btn').classList.add('hidden');
+    }
+
+    function deleteServiceFromCatalog(index) {
+        if(confirm('האם למחוק את השירות מהמחירון?')) {
+            const data = getActiveData();
+            data.services.splice(index, 1);
+            saveCurrentSalonDataToCloud();
+            renderSalonData();
+        }
+    }
+
+    function fillReceiptAmountFromService() {
+        const select = document.getElementById('receipt-service-select');
+        const selectedOption = select.options[select.selectedIndex];
+        const price = selectedOption.getAttribute('data-price');
+        if(price) {
+            document.getElementById('receipt-amount').value = price;
+            document.getElementById('receipt-items').value = selectedOption.value;
+        }
+    }
+
+    function generateReceipt() {
+        const client = document.getElementById('receipt-client-select').value;
+        const items = document.getElementById('receipt-items').value.trim() || 'שירותי מספרה';
+        const amount = Number(document.getElementById('receipt-amount').value); 
+
+        if(!client || !amount) return alert('נא לבחור לקוח ולהזין סכום לתשלום'); 
+
+        const data = getActiveData();
+        const receiptNumber = 1000 + data.receipts.length + 1;
+        const date = new Date().toLocaleDateString('he-IL');
+        const salon = globalSalons.find(s => s.id === currentSalonId);
+        const salonName = salon ? salon.name : 'המספרה'; 
+
+        const receiptObj = { receiptNumber, date, client, items, amount, salonName };
+        lastGeneratedReceipt = receiptObj; 
+
+        data.receipts.push(receiptObj);
+        saveCurrentSalonDataToCloud();
+        renderSalonData(); 
+
+        document.getElementById('rec-num').innerText = receiptNumber;
+        document.getElementById('rec-date').innerText = date;
+        document.getElementById('rec-salon').innerText = salonName;
+        document.getElementById('rec-client').innerText = client;
+        document.getElementById('rec-desc').innerText = items;
+        document.getElementById('rec-total').innerText = amount; 
+
+        document.getElementById('receipt-preview').classList.remove('hidden');
+        document.getElementById('receipt-amount').value = '';
+        document.getElementById('receipt-items').value = '';
+    }
+
+    function sendReceiptSMS() {
+        if(!lastGeneratedReceipt) return;
+        const clientSelect = document.getElementById('receipt-client-select');
+        const selectedOpt = Array.from(clientSelect.options).find(opt => opt.value === lastGeneratedReceipt.client);
+        const phone = selectedOpt ? selectedOpt.getAttribute('data-phone') : '';
+        const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
+        
+        const smsText = `קבלה מס' #${lastGeneratedReceipt.receiptNumber} מ-${lastGeneratedReceipt.salonName}\nלקוח: ${lastGeneratedReceipt.client}\nסכום: ₪${lastGeneratedReceipt.amount}\nתודה רבה!`;
+        
+        const smsUrl = cleanPhone
+            ? `sms:972${cleanPhone.startsWith('0') ? cleanPhone.slice(1) : cleanPhone}?body=${encodeURIComponent(smsText)}`
+            : `sms:?body=${encodeURIComponent(smsText)}`;
+        window.open(smsUrl, '_blank');
+    }
+
+    function verifySalonPassword() {
+        const inputPass = document.getElementById('login-password-input').value.trim();
+        const salon = globalSalons.find(s => s.id === pendingSalonParam);
+        if(salon && salon.password === inputPass) {
+            document.getElementById('password-modal').classList.add('hidden');
+            openSalonDashboard(pendingSalonParam);
+        } else {
+            alert('סיסמה שגויה!');
+        }
+    }
+
+    window.onload = function() {
+        updateCategoryOptions();
+        const urlParams = new URLSearchParams(window.location.search);
+        const salonParam = urlParams.get('salon');
+        
+        if (salonParam) {
+            pendingSalonParam = salonParam;
+            const checkSalonsInterval = setInterval(() => {
+                if (globalSalons.length > 0) {
+                    clearInterval(checkSalonsInterval);
+                    const salon = globalSalons.find(s => s.id === salonParam);
+                    if (salon) {
+                        document.getElementById('modal-salon-name').innerText = salon.name;
+                        document.getElementById('password-modal').classList.remove('hidden');
+                    } else {
+                        document.getElementById('error-modal').classList.remove('hidden');
+                    }
+                }
+            }, 100);
+        } else {
+            showSuperAdmin();
+        }
+    };
+</script>
+</body>
+</html>
