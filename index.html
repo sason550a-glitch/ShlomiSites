@@ -54,21 +54,6 @@
             margin: 0 auto;
         } 
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 20px 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            margin-bottom: 30px;
-            border: 2px solid #000000;
-            outline: 1px solid var(--primary);
-        } 
-
         h1, h2, h3 {
             color: var(--text-main);
             font-weight: 700;
@@ -172,6 +157,37 @@
             background: linear-gradient(90deg, var(--primary), #000000, var(--primary));
         } 
 
+        /* עיצוב באנר PaorSystem */
+        .salon-top-banner {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 230, 222, 0.9) 100%);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 20px 30px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border: 2px solid #000000;
+            outline: 1.5px solid var(--primary);
+            text-align: center;
+        }
+
+        .banner-icon {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, var(--primary) 0%, #9c7e44 100%);
+            color: #ffffff;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(184, 151, 83, 0.3);
+            border: 1px solid #000000;
+            flex-shrink: 0;
+        }
+
         .salon-3d-header {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 230, 222, 0.8) 100%);
             backdrop-filter: blur(12px);
@@ -249,11 +265,9 @@
             border-bottom: 2px solid #000000;
         } 
 
-        /* וידוא שכל שדות הקלט ותיבות הבחירה מיושרים לימין באופן מלא ומוצגים במלואם בתוך המסגרת */
         input, select {
             width: 100%;
-            max-width: 100%;
-            padding: 12px 15px;
+            padding: 12px;
             margin-top: 6px;
             margin-bottom: 16px;
             border: 1.5px solid #000000;
@@ -264,8 +278,7 @@
             color: var(--text-main);
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
             backdrop-filter: blur(5px);
-            text-align: right;
-            direction: rtl;
+            text-align: inherit;
         } 
 
         input:focus, select:focus {
@@ -387,18 +400,6 @@
 </div>
 
 <div class="container">
-    <header>
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div>
-                <h1 id="main-app-title" style="font-size: 1.4rem; color: var(--primary); text-shadow: 0 1px 2px rgba(0,0,0,0.1);">PaorSystem</h1>
-                <p id="current-view-title" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600;">מערכת ניהול מספרות מקצועית</p>
-            </div>
-            <!-- אייקון קטן של גבר מרים משקולות בצד ימין של הכותרת הראשונה -->
-            <span style="font-size: 1.6rem;" title="PaorSystem Fitness">🏋️‍♂️</span>
-        </div>
-        <div id="header-actions" style="display: flex; gap: 10px; align-items: center;"></div>
-    </header> 
-
     <!-- מסך 1: ניהול ראשי (Super Admin) -->
     <div id="super-admin-view" class="card hidden">
         <h2 style="color: var(--primary); margin-bottom: 5px;">ניהול מערכת ראשי</h2>
@@ -438,6 +439,13 @@
     <!-- מסך 2: ניהול מספרה ספציפית -->
     <div id="salon-dashboard-view" class="hidden">
         
+        <!-- כותרת PaorSystem במרכז עם משקולות מימין ומספריים משמאל -->
+        <div class="salon-top-banner">
+            <div class="banner-icon" title="גבר מרים משקולות">🏋️‍♂️</div>
+            <h2 style="color: var(--primary); font-size: 1.5rem; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">PaorSystem</h2>
+            <div class="banner-icon" title="מספריים">✂️</div>
+        </div>
+
         <div class="salon-3d-header">
             <div class="salon-title-wrapper">
                 <div class="salon-icon-box">✂️</div>
@@ -476,9 +484,8 @@
             </button>
             
             <div id="services-management-container" class="hidden" style="margin-top: 20px; border-top: 1.5px solid #000000; padding-top: 20px;">
-                <!-- תוקן יישור תיבת "הוסף למחירון" בתוך גבולות המסגרת באמצעות מרווחים מדויקים ותיחום פנימי -->
-                <div class="grid-2" style="align-items: start; padding: 0 5px;">
-                    <div style="background: rgba(255, 255, 255, 0.6); padding: 15px; border-radius: 12px; border: 1px solid var(--border); box-sizing: border-box;">
+                <div class="grid-2">
+                    <div>
                         <h4 id="service-form-title" style="margin-bottom: 12px; font-size: 1.05rem; color: var(--primary);">הוספת שירות חדש</h4>
                         <input type="hidden" id="edit-service-index" value="">
                         <input type="text" id="new-service-name" placeholder="שם השירות (למשל: תספורת גברים)">
@@ -488,10 +495,10 @@
                             <option value="נשים">נשים</option>
                             <option value="ילדים">ילדים</option>
                         </select>
-                        <button onclick="saveServiceToCatalog()" id="save-service-btn" style="width: 100%;">הוסף למחירון</button>
+                        <button onclick="saveServiceToCatalog()" id="save-service-btn">הוסף למחירון</button>
                         <button onclick="resetServiceForm()" class="secondary hidden" id="cancel-service-edit-btn" style="margin-top: 5px; width: 100%;">ביטול</button>
                     </div>
-                    <div style="box-sizing: border-box; padding-top: 2px;">
+                    <div>
                         <h4 id="txt-current-pricelist" style="margin-bottom: 12px; font-size: 1.05rem; color: var(--primary);">מחירון נוכחי</h4>
                         <div style="max-height: 250px; overflow-y: auto;">
                             <table style="font-size: 0.9rem;">
@@ -653,7 +660,6 @@
     firebase.initializeApp(_0x1abc);
     const database = firebase.database(); 
 
-    // מילון תרגומים (עברית / רוסית)
     const translations = {
         he: {
             htmlDir: "rtl",
@@ -762,7 +768,7 @@
             recDate: "Дата",
             recSalon: "Салон",
             recClient: "Клиент",
-            recDesc: "Описание",
+            recОписание: "Описание",
             recTotal: "Сумма",
             recStatus: "Статус: Оплачено ✓",
             sendSmsBtn: "📱 Отправить чек по SMS",
@@ -897,7 +903,6 @@
             if (_0x3abc) {
                 const _0x4abc = _0x3abc.name;
                 document.getElementById('active-salon-title').innerText = _0x4abc;
-                document.getElementById('current-view-title').innerText = _0x4abc;
             }
         }
     }); 
@@ -1002,7 +1007,6 @@
         currentSalonId = null;
         document.getElementById('super-admin-view').classList.remove('hidden');
         document.getElementById('salon-dashboard-view').classList.add('hidden');
-        document.getElementById('current-view-title').innerText = "ניהול מרכזי - מערכת מספרות";
         resetSalonForm();
         renderSalonsList();
     } 
@@ -1149,8 +1153,6 @@
             expiryBadge.innerText = `${currentLang === 'ru' ? 'Срок' : 'תוקף'}: ${expiryInfo.text}`;
         }
 
-        document.getElementById('current-view-title').innerText = salonName; 
-
         renderSalonData();
     } 
 
@@ -1161,6 +1163,15 @@
         }
         if(!globalData[currentSalonId].services) {
             globalData[currentSalonId].services = [...defaultFullServices];
+        }
+        if(!globalData[currentSalonId].clients) {
+            globalData[currentSalonId].clients = [];
+        }
+        if(!globalData[currentSalonId].appointments) {
+            globalData[currentSalonId].appointments = [];
+        }
+        if(!globalData[currentSalonId].receipts) {
+            globalData[currentSalonId].receipts = [];
         }
         return globalData[currentSalonId];
     } 
